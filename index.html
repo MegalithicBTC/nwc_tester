@@ -214,8 +214,8 @@
                 if ( !amnt ) return alert( `you must specify a value greater than 1` );
                 var desc = "";
                 if ( $( '.invoice_desc' ).value ) desc = $( '.invoice_desc' ).value;
-                var delay_tolerance = 12;
-                $( ".make_invoice_status" ).innerText = `sending a request for a ${amnt} sat invoice and waiting up to 12 seconds for a response...`;
+                var delay_tolerance = 6;
+                $( ".make_invoice_status" ).innerText = `sending a request for a ${amnt} sat invoice and waiting up to 6 seconds for a response...`;
                 var invoice_info = await nwcjs.makeInvoice( nwc_info, amnt, desc, delay_tolerance );
                 if ( "error" in invoice_info && invoice_info[ "error" ] ) {
                     $( ".make_invoice_status" ).innerText = `error: ` + JSON.stringify( invoice_info[ "error" ] );
