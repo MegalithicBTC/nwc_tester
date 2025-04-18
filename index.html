@@ -222,6 +222,72 @@
                     return;
                 }
                 $( ".make_invoice_status" ).innerText = `The invoice was successfully retrieved and is ${invoice_info.result.invoice || invoice_info.result.bolt11}\n\nFull response:\n\n${JSON.stringify( invoice_info.result, null, 4 )}`;
+
+                // Extract payment_hash and created_at from the invoice response
+                var payment_hash = invoice_info.result.payment_hash;
+                var invoice_created_at = invoice_info.result.created_at;
+
+                // Update status to indicate listening for notifications
+                $( ".make_invoice_status" ).innerText += `\nNow listening for payment_received notification for up to 60 seconds...`;
+
+                // Record the start time for the 60-second timeout
+                var start_time = Date.now();
+
+                // Set up an interval to check for notifications every 5 seconds
+                var interval_id = setInterval( async () => {
+                    var current_time = Date.now();
+                    
+                    // Check if 60 seconds have passed
+                    if ( current_time - start_time > 60000 ) {
+                        clearInterval( interval_id );
+                        $( ".make_invoice_status" ).innerText += `\nNo payment received within 60 seconds.`;
+                        return;
+                    }
+                    
+                    // Fetch notification events from the relay
+                    var events = await nwcjs.getEvents(
+                        nwc_info.relay,       // relay
+                        null,                 // ids
+                        [23196],              // kinds
+                        null,                 // until
+                        invoice_created_at,   // since
+                        null,                 // limit
+                        null,                 // etags
+                        [nwc_info.app_pubkey],// ptags
+                        6                     // delay_tolerance
+                    );
+                    
+                    // Filter events to only include those from the wallet pubkey
+                    var filtered_events = events.filter( event => event.pubkey === nwc_info.wallet_pubkey );
+                    
+                    // Process each filtered event
+                    for ( var event of filtered_events ) {
+                        try {
+                            // Decrypt the event content
+                            var decrypted_content = await nwcjs.decrypt(
+                                nwc_info.app_privkey,
+                                event.pubkey,
+                                event.content
+                            );
+                            
+                            // Parse the decrypted content
+                            var notification = JSON.parse( decrypted_content );
+                            
+                            // Check if it's the desired notification
+                            if ( notification.notification_type === "payment_received" &&
+                                 notification.notification.payment_hash === payment_hash ) {
+                                // Display the notification data
+                                $( ".make_invoice_status" ).innerText += `\nPayment received notification:\n${JSON.stringify( notification.notification, null, 4 )}`;
+                                
+                                // Stop the interval
+                                clearInterval( interval_id );
+                                return;
+                            }
+                        } catch ( e ) {
+                            // Ignore errors in decryption or parsing
+                        }
+                    }
+                }, 5000 );
             }
             $( '.check_invoice' ).onclick = async () => {
                 var nwc_string = $( '.check_invoice_div .nwc_string' ).value;
@@ -242,9 +308,73 @@
                 var invoice = $( '.pay_invoice_div .invoice_to_pay' ).value;
                 var amnt = null;
                 $( ".pay_invoice_status" ).innerText = `Sending request...`;
-                nwcjs.tryToPayInvoice( nwc_info, invoice, amnt );
-                await nwcjs.waitSomeSeconds( 1 );
-                $( ".pay_invoice_status" ).innerText = `A request to pay the invoice was sent. Consider using "Check invoice" to view its status.`;
+
+                // Fire-and-forget payment request with error handling
+                nwcjs.tryToPayInvoice( nwc_info, invoice, amnt ).catch( e => {
+                    $( ".pay_invoice_status" ).innerText += `\nError sending payment request: ${e.message}`;
+                });
+
+                // Proceed immediately to notification listening
+                $( ".pay_invoice_status" ).innerText = `A request to pay the invoice was sent. Now listening for payment_sent notifications for up to 60 seconds...`;
+
+                // Record the start time for the 60-second timeout
+                var start_time = Date.now();
+
+                // Set up an interval to check for notifications every 5 seconds
+                var interval_id = setInterval( async () => {
+                    var current_time = Date.now();
+                    
+                    // Check if 60 seconds have passed
+                    if ( current_time - start_time > 60000 ) {
+                        clearInterval( interval_id );
+                        $( ".pay_invoice_status" ).innerText += `\nNo payment_sent notifications received within 60 seconds.`;
+                        return;
+                    }
+                    
+                    // Fetch notification events from the relay
+                    var events = await nwcjs.getEvents(
+                        nwc_info.relay,       // relay
+                        null,                 // ids
+                        [23196],              // kinds
+                        null,                 // until
+                        Math.floor(Date.now() / 1000) - 60, // since: 60 seconds ago
+                        null,                 // limit
+                        null,                 // etags
+                        [nwc_info.app_pubkey],// ptags
+                        6                     // delay_tolerance
+                    );
+                    
+                    // Filter events to only include those from the wallet pubkey
+                    var filtered_events = events.filter( event => event.pubkey === nwc_info.wallet_pubkey );
+                    
+                    // Process each filtered event
+                    for ( var event of filtered_events ) {
+                        try {
+                            // Decrypt the event content
+                            var decrypted_content = await nwcjs.decrypt(
+                                nwc_info.app_privkey,
+                                event.pubkey,
+                                event.content
+                            );
+                            
+                            // Parse the decrypted content
+                            var notification = JSON.parse( decrypted_content );
+                            
+                            // Check if it's a payment_sent notification with matching invoice
+                            if ( notification.notification_type === "payment_sent" &&
+                                 notification.notification.invoice === invoice ) {
+                                // Display the notification data
+                                $( ".pay_invoice_status" ).innerText += `\nPayment sent notification:\n${JSON.stringify( notification.notification, null, 4 )}`;
+                                
+                                // Stop the interval
+                                clearInterval( interval_id );
+                                return;
+                            }
+                        } catch ( e ) {
+                            // Ignore errors in decryption or parsing
+                        }
+                    }
+                }, 5000 );
             }
             $( '.get_balance' ).onclick = async () => {
                 var nwc_string = $( '.get_balance_div .nwc_string' ).value;
