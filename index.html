@@ -398,8 +398,8 @@
                 var unpaid = $( '.include_unpaid' ).checked;
                 var type = $( '.invoice_type' ).value.toLowerCase();
                 if ( type === "------" ) type = null;
-                $( ".list_transactions_status" ).innerText = `sending a request for transactions and waiting up to 6 seconds for a response...`;
-                var delay_tolerance = 6;
+                $( ".list_transactions_status" ).innerText = `sending a request for transactions and waiting up to 20 seconds for a response...`;
+                var delay_tolerance = 20;
                 var txs = await nwcjs.listTransactions( nwc_info, from, until, limit, offset, unpaid, type, delay_tolerance );
                 if ( "error" in txs && txs[ "error" ] ) {
                     $( ".list_transactions_status" ).innerText = `error: ` + JSON.stringify( txs[ "error" ] );
