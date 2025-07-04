@@ -176,7 +176,7 @@
                         var event_id = await nwcjs.sendEvent( event, nwc_info[ "relay" ] );
                         await nwcjs.waitSomeSeconds( 1 );
                         $( ".check_nwc_string_status" ).innerText = `testing if it has the event we sent...`;
-                        var events = await nwcjs.getEvents( nwc_info[ "relay" ], [event_id], null, null, null, null, null, null, 6 );
+                        var events = await nwcjs.getEvents( nwc_info[ "relay" ], [event_id], null, null, null, null, null, null, 30 );
                         $( ".check_nwc_string_status" ).innerText = `done testing the relay`;
                         if ( !events.length ) {
                             relay_is_down = true;
@@ -198,8 +198,8 @@
             $( '.check_permissions' ).onclick = async () => {
                 var nwc_string = $( '.check_permissions_div .nwc_string' ).value;
                 var nwc_info = nwcjs.processNWCstring( nwc_string );
-                $( ".check_permissions_status" ).innerText = `sending a request for permissions and waiting up to 6 seconds for a response...`;
-                var delay_tolerance = 6;
+                $( ".check_permissions_status" ).innerText = `sending a request for permissions and waiting up to 30 seconds for a response...`;
+                var delay_tolerance = 30;
                 var wallet_info = await nwcjs.getInfo( nwc_info, delay_tolerance );
                 if ( "error" in wallet_info && wallet_info[ "error" ] ) {
                     $( ".check_permissions_status" ).innerText = `error: ` + JSON.stringify( wallet_info[ "error" ] );
@@ -214,8 +214,8 @@
                 if ( !amnt ) return alert( `you must specify a value greater than 1` );
                 var desc = "";
                 if ( $( '.invoice_desc' ).value ) desc = $( '.invoice_desc' ).value;
-                var delay_tolerance = 6;
-                $( ".make_invoice_status" ).innerText = `sending a request for a ${amnt} sat invoice and waiting up to 6 seconds for a response...`;
+                var delay_tolerance = 30;
+                $( ".make_invoice_status" ).innerText = `sending a request for a ${amnt} sat invoice and waiting up to 30 seconds for a response...`;
                 var invoice_info = await nwcjs.makeInvoice( nwc_info, amnt, desc, delay_tolerance );
                 if ( "error" in invoice_info && invoice_info[ "error" ] ) {
                     $( ".make_invoice_status" ).innerText = `error: ` + JSON.stringify( invoice_info[ "error" ] );
@@ -254,7 +254,7 @@
                         null,                 // limit
                         null,                 // etags
                         [nwc_info.app_pubkey],// ptags
-                        6                     // delay_tolerance
+                        30                     // delay_tolerance
                     );
                     
                     // Filter events to only include those from the wallet pubkey
@@ -293,8 +293,8 @@
                 var nwc_string = $( '.check_invoice_div .nwc_string' ).value;
                 var nwc_info = nwcjs.processNWCstring( nwc_string );
                 var invoice = $( '.check_invoice_div .invoice_to_check' ).value;
-                var delay_tolerance = 6;
-                $( ".check_invoice_status" ).innerText = `sending a request for the status of that invoice and waiting up to 6 seconds for a response...`;
+                var delay_tolerance = 30;
+                $( ".check_invoice_status" ).innerText = `sending a request for the status of that invoice and waiting up to 30 seconds for a response...`;
                 var invoice_info = await nwcjs.checkInvoice( nwc_info, invoice, delay_tolerance );
                 if ( "error" in invoice_info && invoice_info[ "error" ] ) {
                     $( ".check_invoice_status" ).innerText = `error: ` + JSON.stringify( invoice_info[ "error" ] );
@@ -341,7 +341,7 @@
                         null,                 // limit
                         null,                 // etags
                         [nwc_info.app_pubkey],// ptags
-                        6                     // delay_tolerance
+                        30                     // delay_tolerance
                     );
                     
                     // Filter events to only include those from the wallet pubkey
@@ -379,8 +379,8 @@
             $( '.get_balance' ).onclick = async () => {
                 var nwc_string = $( '.get_balance_div .nwc_string' ).value;
                 var nwc_info = nwcjs.processNWCstring( nwc_string );
-                var delay_tolerance = 6;
-                $( ".get_balance_status" ).innerText = `sending a request for the balance and waiting up to 6 seconds for a response...`;
+                var delay_tolerance = 30;
+                $( ".get_balance_status" ).innerText = `sending a request for the balance and waiting up to 30 seconds for a response...`;
                 var balance_info = await nwcjs.getBalance( nwc_info, delay_tolerance );
                 if ( "error" in balance_info && balance_info[ "error" ] ) {
                     $( ".get_balance_status" ).innerText = `error: ` + JSON.stringify( balance_info[ "error" ] );
@@ -398,8 +398,8 @@
                 var unpaid = $( '.include_unpaid' ).checked;
                 var type = $( '.invoice_type' ).value.toLowerCase();
                 if ( type === "------" ) type = null;
-                $( ".list_transactions_status" ).innerText = `sending a request for transactions and waiting up to 20 seconds for a response...`;
-                var delay_tolerance = 20;
+                $( ".list_transactions_status" ).innerText = `sending a request for transactions and waiting up to 30 seconds for a response...`;
+                var delay_tolerance = 30;
                 var txs = await nwcjs.listTransactions( nwc_info, from, until, limit, offset, unpaid, type, delay_tolerance );
                 if ( "error" in txs && txs[ "error" ] ) {
                     $( ".list_transactions_status" ).innerText = `error: ` + JSON.stringify( txs[ "error" ] );
